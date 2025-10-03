@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>续费提醒管理系统 · iPhone 16 Pro Max 原型</title>
+<meta name="color-scheme" content="light dark">
+<style>
+  /* --- Design tokens --- */
+  :root {
+    --bg: #f6f7fb;
+    --app: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 10px 30px rgba(0,0,0,.08);
+    --primary: #2563eb;
+    --primary-weak: rgba(37,99,235,.1);
+    --success: #16a34a;
+    --success-weak: rgba(22,163,74,.12);
+    --warning: #f59e0b;
+    --warning-weak: rgba(245,158,11,.14);
+    --danger: #ef4444;
+    --danger-weak: rgba(239,68,68,.14);
+    --accent: #10b981;
+    --accent-weak: rgba(16,185,129,.12);
+    --chip: #f3f4f6;
+    --frost: rgba(255,255,255,.75);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1115;
+      --app: #151922;
+      --text: #e5e7eb;
+      --muted: #9aa0aa;
+      --border: #222733;
+      --shadow: 0 10px 30px rgba(0,0,0,.45);
+      --primary: #5b8dff;
+      --primary-weak: rgba(91,141,255,.12);
+      --success: #35c87c;
+      --success-weak: rgba(53,200,124,.14);
+      --warning: #ffc95d;
+      --warning-weak: rgba(255,201,93,.12);
+      --danger: #ff6b6b;
+      --danger-weak: rgba(255,107,107,.16);
+      --accent: #7ae7c7;
+      --accent-weak: rgba(122,231,199,.1);
+      --chip: #1f2430;
+      --frost: rgba(21,25,34,.76);
+    }
+  }
+
+  /* --- Page reset --- */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+    color: var(--text);
+    background: linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 60%, transparent));
+    letter-spacing: .2px;
+  }
+  h1,h2,h3 { margin: 0; }
+  p { margin: 0 0 8px; color: var(--muted); }
+  button { font: inherit; }
+  a { color: inherit; text-decoration: none; }
+
+  /* --- Desktop preview frame (approx iPhone 16 Pro Max logical viewport) --- */
+  .frame {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+  }
+  .device {
+    width: 440px;        /* ~ iPhone 16 Pro Max 逻辑宽度近似值 */
+    height: 956px;       /* ~ iPhone 16 Pro Max 逻辑高度近似值 */
+    background: var(--app);
+    border-radius: 42px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .island {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 130px; height: 36px; background: #000; border-radius: 22px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    z-index: 20;
+    opacity: .85;
+  }
+
+  /* --- App layout --- */
+  .app {
+    position: absolute; inset: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  header.appbar {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--app) 86%, transparent), var(--app));
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .title {
+    font-weight: 700; font-size: 18px;
+    display: flex; flex-direction: column; line-height: 1.1;
+  }
+  .subtitle { font-size: 11px; color: var(--muted); }
+
+  .badge {
+    margin-left: auto;
+    background: var(--primary-weak);
+    color: var(--primary);
+    padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+
+  main {
+    overflow: auto;
+    padding: 12px 14px 12px;
+  }
+
+  .section {
+    margin-bottom: 14px;
+    background: var(--app);
+  }
+  .card {
+    background: var(--app);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: none;
+  }
+  .shadow { box-shadow: var(--shadow); }
+
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; padding: 6px 10px; border-radius: 999px;
+    background: var(--chip);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .chip[data-kind="success"] { background: var(--success-weak); color: var(--success); border-color: transparent; }
+  .chip[data-kind="warning"] { background: var(--warning-weak); color: var(--warning); border-color: transparent; }
+  .chip[data-kind="danger"] { background: var(--danger-weak); color: var(--danger); border-color: transparent; }
+  .chip[data-kind="primary"] { background: var(--primary-weak); color: var(--primary); border-color: transparent; }
+  .chip[data-kind="accent"] { background: var(--accent-weak); color: var(--accent); border-color: transparent; }
+
+  .kpi {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .kpi .item {
+    border: 1px solid var(--border); border-radius: 12px; padding: 10px;
+  }
+  .kpi .item h3 { font-size: 18px; font-weight: 800; }
+  .kpi .item p { font-size: 11px; }
+
+  /* --- Stepper / timeline --- */
+  .timeline { display: grid; gap: 10px; }
+  .step {
+    display: grid; grid-template-columns: 24px 1fr; gap: 10px;
+  }
+  .dot {
+    width: 10px; height: 10px; border-radius: 8px; margin-top: 6px;
+    background: var(--primary);
+    position: relative;
+  }
+  .dot::after {
+    content: ""; position: absolute; top: 12px; left: 4px; width: 2px; height: calc(100% + 8px);
+    background: var(--border);
+  }
+  .step:last-child .dot::after { display: none; }
+  .step .content { border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+  .step h4 { margin: 0; font-size: 14px; font-weight: 700; }
+  .step .meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .step .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .btn {
+    background: var(--primary);
+    color: white; border: none; border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 13px;
+    box-shadow: 0 2px 0 rgba(0,0,0,.08); cursor: pointer;
+  }
+  .btn.ghost {
+    background: var(--chip); color: var(--text); border: 1px solid var(--border); box-shadow: none;
+  }
+  .btn.link { background: transparent; color: var(--primary); padding: 0; }
+
+  /* --- Students --- */
+  .tools { display: flex; gap: 8px; margin-bottom: 10px; }
+  .input {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px;
+    background: var(--chip); border: 1px solid var(--border); color: var(--text); flex: 1;
+  }
+  .seg { display: inline-flex; background: var(--chip); border: 1px solid var(--border); border-radius: 999px; padding: 4px; }
+  .seg button {
+     padding: 6px 10px; border: none; border-radius: 999px; background: transparent; color: var(--muted);
+     font-weight: 600; cursor: pointer;
+  }
+  .seg button.active { background: var(--primary-weak); color: var(--primary); }
+
+  .student { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; border: 1px solid var(--border); border-radius: 14px; padding: 10px; }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white;
+    display: grid; place-items: center; font-weight: 800;
+  }
+  .student h4 { font-size: 14px; margin: 0; }
+  .student .meta { font-size: 11px; color: var(--muted); }
+  .pill {
+    padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; border: 1px solid var(--border);
+  }
+  .pill[data-type="high"] { background: var(--success-weak); color: var(--success); border-color: transparent; }
+  .pill[data-type="mid"] { background: var(--warning-weak); color: var(--warning); border-color: transparent; }
+  .pill[data-type="low"] { background: var(--danger-weak); color: var(--danger); border-color: transparent; }
+
+  .student .actions { display: flex; gap: 6px; margin-top: 8px; }
+  .student .actions .mini { font-size: 12px; padding: 6px 8px; }
+
+  details.student-extra { grid-column: 1 / -1; }
+  details summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 6px; color: var(--primary); }
+  details summary::-webkit-details-marker { display:none; }
+
+  .list { display: grid; gap: 8px; }
+
+  /* --- Modal / sheet --- */
+  dialog.sheet {
+    width: min(420px, 96%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 0;
+    background: var(--app);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgba(0,0,0,.3); backdrop-filter: blur(2px); }
+  .sheet header { padding: 12px; border-bottom: 1px solid var(--border); }
+  .sheet main { padding: 12px; max-height: 62vh; overflow: auto; }
+  .sheet footer { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+  textarea, select, input[type="text"], input[type="number"], input[type="time"], input[type="date"] {
+    width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--chip); color: var(--text);
+    font: inherit;
+  }
+
+  /* --- Parents / Payment --- */
+  .plan { border: 1px solid var(--border); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
+  .radio { display:flex; gap:8px; align-items:center; }
+  .radio input { accent-color: var(--primary); }
+  .payments { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .payments .method {
+    border: 1px dashed var(--border); border-radius: 12px; padding: 10px; text-align: center; font-weight: 700; cursor: pointer;
+  }
+  .payments .method.active { border-style: solid; border-color: var(--primary); background: var(--primary-weak); color: var(--primary); }
+
+  /* --- Insights & tiny charts --- */
+  .bar {
+    height: 10px; background: var(--chip); border-radius: 999px; border: 1px solid var(--border); position: relative;
+    overflow: hidden;
+  }
+  .bar > i { display:block; height:100%; background: var(--primary); border-radius: 999px; }
+  .ring {
+    --val: 0;
+    width: 68px; height: 68px; border-radius: 50%;
+    background: conic-gradient(var(--primary) calc(var(--val) * 1%), color-mix(in srgb, var(--chip) 86%, transparent) 0);
+    display: grid; place-items: center;
+    border: 6px solid var(--app);
+  }
+  .ring span { font-weight: 800; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid1 { display: grid; gap: 10px; }
+
+  .hint { font-size: 11px; color: var(--muted); }
+
+  /* --- Bottom tab bar --- */
+  nav.tabbar {
+    position: sticky; bottom: 0; z-index: 10;
+    background: linear-gradient(0deg, color-mix(in srgb, var(--app) 86%, transparent), var(--app));
+    border-top: 1px solid var(--border);
+    padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+  }
+  .tabbar button {
+    display: grid; place-items: center; gap: 2px; padding: 8px 6px; border-radius: 12px; border: none; background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .tabbar button.active { color: var(--primary); background: var(--primary-weak); font-weight: 700; }
+  .tabbar i { font-style: normal; font-size: 18px; line-height: 1; }
+
+  /* --- Floating toolbox button --- */
+  .fab {
+    position: fixed; right: 22px; bottom: 84px; z-index: 9;
+    width: 56px; height: 56px; border-radius: 28px; display: grid; place-items: center;
+    background: var(--primary); color: white; font-size: 22px; box-shadow: var(--shadow); border: none; cursor: pointer;
+  }
+
+  /* --- Tiny helpers --- */
+  .muted { color: var(--muted); }
+  .sm { font-size: 12px; }
+  .xs { font-size: 11px; }
+  .mb8 { margin-bottom: 8px; }
+  .mb12 { margin-bottom: 12px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt4 { margin-top: 4px; }
+  .mr8 { margin-right: 8px; }
+  .w100 { width: 100%; }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="device">
+      <div class="island"></div>
+      <div class="app">
+        <header class="appbar">
+          <div class="row">
+            <span class="chip" title="Environment">📱 iPhone 16 Pro Max</span>
+          </div>
+          <div class="title">
+            <span>续费提醒管理系统</span>
+            <span class="subtitle">Renewal Reminder Management · Prototype</span>
+          </div>
+          <span class="badge">原型 / Prototype</span>
+        </header>
+
+        <main id="views">
+          <!-- View: Overview -->
+          <section class="view" data-view="home">
+            <div class="card shadow mb12">
+              <div class="between">
+                <h2 style="font-size:16px;">分阶段提醒机制 <span class="muted sm">Phased reminders</span></h2>
+                <span class="chip" data-kind="primary">状态：启用</span>
+              </div>
+              <div class="timeline mt8">
+                <div class="step">
+                  <div class="dot"></div>
+                  <div class="content">
+                    <div class="between">
+                      <h4>提前 30 天</h4>
+                      <span class="chip">🧾 续费预警单</span>
+                    </div>
+                    <p class="meta">系统自动生成并同步至教练后台/学院端</p>
+                    <div class="actions">
+                      <button class="btn ghost" onclick="alert('已同步至教练和学院端（模拟）')">同步</button>
+                      <button class="btn" onclick="toast('已创建预警单（模拟）')">生成预警单</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="dot"></div>
+                  <div class="content">
+                    <div class="between">
+                      <h4>提前 15 天</h4>
+                      <span class="chip" data-kind="warning">⏳ 优惠倒计时</span>
+                    </div>
+                    <p class="meta">向家长推送续费通知 + 自动推送“续费优惠倒计时”</p>
+                    <div class="actions">
+                      <button class="btn" onclick="toast('已推送续费通知（模拟）')">推送通知</button>
+                      <button class="btn ghost" onclick="toast('倒计时已开启（模拟）')">开启倒计时</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="step">
+                  <div class="dot"></div>
+                  <div class="content">
+                    <div class="between">
+                      <h4>提前 7 天</h4>
+                      <span class="chip" data-kind="danger">❗ 重点跟进</span>
+                    </div>
+                    <p class="meta">教练收到提醒，支持标记“已沟通”状态</p>
+                    <div class="actions">
+                      <button class="btn" onclick="openSheet('sheetFollow')">标记已沟通</button>
+                      <button class="btn ghost" onclick="navigate('students')">查看待续费学生</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="kpi">
+              <div class="item">
+                <h3 id="kpiConv">68%</h3>
+                <p>近30天 续费转化率</p>
+              </div>
+              <div class="item">
+                <h3 id="kpiAvg">4.2天</h3>
+                <p>平均续报时长</p>
+              </div>
+              <div class="item">
+                <h3 id="kpiOverdue">12</h3>
+                <p>超期未续 学员</p>
+              </div>
+            </div>
+
+            <div class="card mt12">
+              <div class="between">
+                <h2 style="font-size:16px;">多角色协同提醒 <span class="muted sm">Multi‑role</span></h2>
+                <button class="btn ghost" onclick="navigate('insights')">查看看板</button>
+              </div>
+              <div class="grid3 mt8">
+                <div class="plan">
+                  <strong>教练端</strong>
+                  <span class="muted xs">待续费列表 / 话术 / 洽谈预约</span>
+                  <button class="btn" onclick="navigate('students')">进入</button>
+                </div>
+                <div class="plan">
+                  <strong>学院端</strong>
+                  <span class="muted xs">续费进度 / 超期预警</span>
+                  <button class="btn" onclick="navigate('insights')">进入</button>
+                </div>
+                <div class="plan">
+                  <strong>家长端</strong>
+                  <span class="muted xs">方案推荐 / 在线缴费</span>
+                  <button class="btn" onclick="navigate('parents')">进入</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- View: Students (Coach) -->
+          <section class="view" data-view="students" hidden>
+            <div class="tools">
+              <div class="input w100"><span>🔍</span><input id="q" type="text" placeholder="搜索学员/班级…" style="background:transparent;border:none;outline:none;width:100%"></div>
+              <div class="seg">
+                <button class="active" data-filter="all">全部</button>
+                <button data-filter="high">高意向</button>
+                <button data-filter="mid">犹豫</button>
+                <button data-filter="low">低意向</button>
+              </div>
+            </div>
+
+            <div id="studentList" class="list"></div>
+
+            <button class="fab" title="教练赋能工具箱" onclick="openSheet('sheetToolbox')">🧰</button>
+          </section>
+
+          <!-- View: Parents -->
+          <section class="view" data-view="parents" hidden>
+            <div class="card">
+              <h2 style="font-size:16px;">个性化续费方案推荐 <span class="muted sm">Personalized plans</span></h2>
+              <div class="grid3 mt8">
+                <label class="plan">
+                  <div class="between">
+                    <div class="radio"><input type="radio" name="plan" checked><strong>套餐 A</strong></div>
+                    <span class="chip" data-kind="success">🎁 长期优惠</span>
+                  </div>
+                  <div class="between">
+                    <span class="muted xs">12 个月 · 48 课时</span>
+                    <strong>¥ 9,999</strong>
+                  </div>
+                </label>
+                <label class="plan">
+                  <div class="between">
+                    <div class="radio"><input type="radio" name="plan"><strong>套餐 B</strong></div>
+                    <span class="chip" data-kind="primary">🔥 热荐</span>
+                  </div>
+                  <div class="between">
+                    <span class="muted xs">6 个月 · 24 课时</span>
+                    <strong>¥ 5,499</strong>
+                  </div>
+                </label>
+                <label class="plan">
+                  <div class="between">
+                    <div class="radio"><input type="radio" name="plan"><strong>套餐 C</strong></div>
+                    <span class="chip" data-kind="accent">👪 团购</span>
+                  </div>
+                  <div class="between">
+                    <span class="muted xs">3 个月 · 12 课时</span>
+                    <strong>¥ 2,999</strong>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="card mt12">
+              <div class="between">
+                <h2 style="font-size:16px;">在线缴费入口 <span class="muted sm">Payment</span></h2>
+                <div class="seg">
+                  <button class="active" id="fullPayBtn">全款</button>
+                  <button id="instalBtn">分期</button>
+                </div>
+              </div>
+              <div class="payments mt8" id="payMethods">
+                <div class="method active" data-method="wechat">💚 微信支付</div>
+                <div class="method" data-method="alipay">💙 支付宝</div>
+                <div class="method" data-method="bank">🏦 银行卡</div>
+                <div class="method" data-method="chain">⛓️ 区块链</div>
+              </div>
+              <p class="hint mt8">“7天满意保障”：不满意可退剩余费用 · 降低决策门槛</p>
+              <button class="btn w100 mt8" onclick="toast('已创建支付链接（模拟）')">生成支付链接</button>
+            </div>
+
+            <div class="card mt12">
+              <div class="between">
+                <h2 style="font-size:16px;">家长决策支持中心 <span class="muted sm">Decision support</span></h2>
+                <button class="btn ghost" onclick="openSheet('sheetTestimonial')">查看证言</button>
+              </div>
+              <div class="grid2 mt8">
+                <div class="plan">
+                  <strong>在线试听体验</strong>
+                  <span class="muted xs">对犹豫家长开放 1 节高阶课程旁听</span>
+                  <button class="btn" onclick="toast('已预约试听（模拟）')">预约</button>
+                </div>
+                <div class="plan">
+                  <strong>升学里程碑倒计时</strong>
+                  <span class="muted xs">关联目标院校，估算训练时长</span>
+                  <button class="btn" onclick="openSheet('sheetCountdown')">设置</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- View: Insights (College dashboard) -->
+          <section class="view" data-view="insights" hidden>
+            <div class="card">
+              <div class="between">
+                <h2 style="font-size:16px;">续费状态跟踪 <span class="muted sm">Status tracking</span></h2>
+                <button class="btn ghost" onclick="refreshInsights()">刷新</button>
+              </div>
+
+              <div class="grid1 mt8">
+                <div>
+                  <div class="between"><span class="sm">待提醒</span><span class="sm" id="s0p">22</span></div>
+                  <div class="bar mt4"><i id="s0" style="width:40%"></i></div>
+                </div>
+                <div>
+                  <div class="between"><span class="sm">已提醒</span><span class="sm" id="s1p">40</span></div>
+                  <div class="bar mt4"><i id="s1" style="width:68%"></i></div>
+                </div>
+                <div>
+                  <div class="between"><span class="sm">沟通中</span><span class="sm" id="s2p">30</span></div>
+                  <div class="bar mt4"><i id="s2" style="width:52%"></i></div>
+                </div>
+                <div>
+                  <div class="between"><span class="sm">待缴费</span><span class="sm" id="s3p">16</span></div>
+                  <div class="bar mt4"><i id="s3" style="width:30%"></i></div>
+                </div>
+                <div>
+                  <div class="between"><span class="sm">已完成</span><span class="sm" id="s4p">48</span></div>
+                  <div class="bar mt4"><i id="s4" style="width:72%"></i></div>
+                </div>
+                <div>
+                  <div class="between"><span class="sm">超期未续（自动变色）</span><span class="sm" id="s5p">12</span></div>
+                  <div class="bar mt4"><i id="s5" style="width:18%; background: var(--danger);"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid2 mt12">
+              <div class="card">
+                <h3 style="font-size:14px;">统计分析 <span class="muted xs">Conversion & Duration</span></h3>
+                <div class="between mt8">
+                  <div class="ring" id="ringConv" style="--val:68;"><span>68%</span></div>
+                  <div class="ring" id="ringAvg" style="--val:42;"><span>4.2天</span></div>
+                  <div class="ring" id="ringMatch" style="--val:76;"><span>76%</span></div>
+                </div>
+                <p class="hint mt8">按时间段统计“续费转化率”“平均续报时长”；套餐匹配度用于辅助优化产品设计。</p>
+              </div>
+              <div class="card">
+                <h3 style="font-size:14px;">流失风险预警 <span class="muted xs">Churn risk</span></h3>
+                <div id="riskList" class="list mt8"></div>
+                <p class="hint mt8">系统根据打卡率、回复速度、请假频率等生成风险评分，并给出干预时机建议。</p>
+              </div>
+            </div>
+
+            <div class="card mt12">
+              <div class="between">
+                <h3 style="font-size:14px;">续费价值计算器 <span class="muted xs">ROI Calculator</span></h3>
+                <div class="seg">
+                  <button class="active" data-roi="kpi">技术指标</button>
+                  <button data-roi="event">赛事等级</button>
+                  <button data-roi="value">每课时提升值</button>
+                </div>
+              </div>
+              <div class="mt8">
+                <label class="sm muted">续报时长（个月）</label>
+                <input id="months" type="range" min="1" max="18" value="6" style="width:100%"/>
+                <div class="between">
+                  <span class="sm">1</span>
+                  <strong id="mVal">6</strong>
+                  <span class="sm">18</span>
+                </div>
+                <div id="roiOutput" class="kpi mt8">
+                  <div class="item">
+                    <h3 id="techUp">+12%</h3>
+                    <p>预计提升的技术指标</p>
+                  </div>
+                  <div class="item">
+                    <h3 id="eventLevel">市级</h3>
+                    <p>可参与的赛事等级</p>
+                  </div>
+                  <div class="item">
+                    <h3 id="perHour">+1.8%</h3>
+                    <p>每课时技术提升值</p>
+                  </div>
+                </div>
+                <div class="grid2 mt8">
+                  <div class="plan">
+                    <strong>机会成本对比</strong>
+                    <p class="xs">停训 3 个月：部分技术指标可能倒退 6–10%</p>
+                    <p class="xs">持续训练：升学/选拔赛优势增强</p>
+                  </div>
+                  <div class="plan">
+                    <strong>个性化 ROI 报告</strong>
+                    <p class="xs">结合历史进步速度，生成报告（原型展示）</p>
+                    <button class="btn mt8" onclick="toast('已生成 ROI 报告（模拟）')">生成报告</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- View: Me / Settings -->
+          <section class="view" data-view="me" hidden>
+            <div class="card">
+              <h2 style="font-size:16px;">系统策略 / 安全</h2>
+              <div class="grid1 mt8">
+                <label class="plan">
+                  <div class="between"><strong>超期未续预警</strong><label class="switch"><input type="checkbox" checked></label></div>
+                  <p class="xs muted">连续 3 天未处理自动升级提醒</p>
+                </label>
+                <label class="plan">
+                  <div class="between"><strong>隐私与合规</strong><span class="chip">GDPR/本地等价</span></div>
+                  <p class="xs muted">本原型仅演示界面交互，不收集真实数据。</p>
+                </label>
+                <label class="plan">
+                  <div class="between"><strong>通知时间窗</strong><span class="muted xs">19:00–21:00</span></div>
+                  <p class="xs muted">系统自动判断最佳沟通节点，避免打扰。</p>
+                </label>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <nav class="tabbar">
+          <button class="active" data-nav="home"><i>🏠</i><span class="xs">总览</span></button>
+          <button data-nav="students"><i>🎯</i><span class="xs">学员</span></button>
+          <button data-nav="parents"><i>👨‍👩‍👧</i><span class="xs">家长</span></button>
+          <button data-nav="insights"><i>📈</i><span class="xs">看板</span></button>
+          <button data-nav="me"><i>⚙️</i><span class="xs">我的</span></button>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet: 标记已沟通 -->
+  <dialog id="sheetFollow" class="sheet">
+    <header class="between">
+      <strong>标记“已沟通”</strong>
+      <button class="btn ghost" onclick="closeSheet('sheetFollow')">关闭</button>
+    </header>
+    <main>
+      <div class="grid1">
+        <label>沟通记录模板</label>
+        <textarea id="commNote" rows="5" placeholder="课程亮点回顾、续报福利、学生进步幅度…"></textarea>
+        <div class="grid2">
+          <input type="date" id="commDate" />
+          <input type="time" id="commTime" />
+        </div>
+      </div>
+    </main>
+    <footer>
+      <button class="btn ghost" onclick="closeSheet('sheetFollow')">取消</button>
+      <button class="btn" onclick="saveFollow()">保存</button>
+    </footer>
+  </dialog>
+
+  <!-- Sheet: 教练赋能工具箱 -->
+  <dialog id="sheetToolbox" class="sheet">
+    <header class="between">
+      <strong>教练赋能工具箱</strong>
+      <button class="btn ghost" onclick="closeSheet('sheetToolbox')">关闭</button>
+    </header>
+    <main>
+      <div class="grid1">
+        <div class="plan">
+          <strong>个性化沟通剧本</strong>
+          <div class="grid2 mt8">
+            <select id="parentType">
+              <option value="price">价格敏感型家长</option>
+              <option value="busy">时间紧张型家长</option>
+              <option value="quality">注重质量型家长</option>
+              <option value="hesitant">犹豫观望型家长</option>
+            </select>
+            <select id="studentFocus">
+              <option value="tech">技术进步</option>
+              <option value="interest">兴趣培养</option>
+              <option value="discipline">自律成长</option>
+            </select>
+          </div>
+          <textarea id="scriptOut" rows="6" class="mt8" placeholder="点击下面的生成按钮获得针对性话术…"></textarea>
+          <div class="between mt8">
+            <button class="btn" onclick="genScript()">生成话术</button>
+            <button class="btn ghost" onclick="copyText('scriptOut')">复制</button>
+          </div>
+        </div>
+
+        <div class="plan">
+          <strong>续费洽谈数据看板</strong>
+          <div class="kpi mt8">
+            <div class="item">
+              <h3 id="kpiCr">72%</h3>
+              <p>本周 转化率</p>
+            </div>
+            <div class="item">
+              <h3 id="kpiSpeed">2.8天</h3>
+              <p>平均首响时间</p>
+            </div>
+            <div class="item">
+              <h3 id="kpiFaq">5条</h3>
+              <p>家长高频问题</p>
+            </div>
+          </div>
+          <details class="mt8">
+            <summary>推荐套餐匹配度说明</summary>
+            <p class="xs">基于近 3 次课程表现与家长偏好，当前班型匹配度 76%。</p>
+          </details>
+        </div>
+
+        <div class="plan">
+          <strong>预约专属洽谈时段</strong>
+          <div class="grid2 mt8">
+            <input type="date" id="aptDate" />
+            <input type="time" id="aptTime" />
+          </div>
+          <div class="seg mt8">
+            <button class="active">黄金时段 19:00-21:00</button>
+            <button>工作日午休 12:00-13:30</button>
+          </div>
+          <button class="btn mt8" onclick="toast('已发送预约提醒给家长（模拟）')">发送提醒</button>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <button class="btn ghost" onclick="closeSheet('sheetToolbox')">完成</button>
+    </footer>
+  </dialog>
+
+  <!-- Sheet: Testimonial -->
+  <dialog id="sheetTestimonial" class="sheet">
+    <header class="between">
+      <strong>老学员证言库</strong>
+      <button class="btn ghost" onclick="closeSheet('sheetTestimonial')">关闭</button>
+    </header>
+    <main>
+      <div class="between">
+        <select id="selRegion">
+          <option>全部地区</option><option>华北</option><option>华东</option><option>华南</option>
+        </select>
+        <select id="selAge">
+          <option>全部年龄段</option><option>6-8岁</option><option>9-11岁</option><option>12-15岁</option>
+        </select>
+      </div>
+      <div class="grid2 mt8">
+        <div class="plan">
+          <strong>视频证言 · 王女士</strong>
+          <p class="xs">华东 · 9岁 · 6 个月提升显著</p>
+          <button class="btn mt8" onclick="toast('播放演示视频…')">播放</button>
+        </div>
+        <div class="plan">
+          <strong>视频证言 · 李先生</strong>
+          <p class="xs">华北 · 12岁 · 赛事入围</p>
+          <button class="btn mt8" onclick="toast('播放演示视频…')">播放</button>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <button class="btn ghost" onclick="closeSheet('sheetTestimonial')">关闭</button>
+    </footer>
+  </dialog>
+
+  <!-- Sheet: Countdown -->
+  <dialog id="sheetCountdown" class="sheet">
+    <header class="between">
+      <strong>升学里程碑倒计时</strong>
+      <button class="btn ghost" onclick="closeSheet('sheetCountdown')">关闭</button>
+    </header>
+    <main>
+      <div class="grid1">
+        <label>目标院校</label>
+        <input id="targetSchool" type="text" placeholder="请输入目标院校…" />
+        <label class="mt8">预计所需训练时间（月）</label>
+        <input id="targetMonths" type="number" min="1" max="36" value="9" />
+        <p class="hint mt8">续报后系统将自动更新倒计时。</p>
+      </div>
+    </main>
+    <footer>
+      <button class="btn ghost" onclick="closeSheet('sheetCountdown')">取消</button>
+      <button class="btn" onclick="toast('已保存目标与倒计时（模拟）'); closeSheet('sheetCountdown')">保存</button>
+    </footer>
+  </dialog>
+
+  <script>
+    // --- Tiny toast ---
+    function toast(msg) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.position = 'fixed';
+      t.style.left = '50%';
+      t.style.bottom = '90px';
+      t.style.transform = 'translateX(-50%)';
+      t.style.background = 'var(--frost)';
+      t.style.backdropFilter = 'blur(8px)';
+      t.style.border = '1px solid var(--border)';
+      t.style.padding = '10px 14px';
+      t.style.borderRadius = '10px';
+      t.style.zIndex = '99';
+      document.body.appendChild(t);
+      setTimeout(() => { t.remove(); }, 1600);
+    }
+
+    // --- Simple router ---
+    const views = document.querySelectorAll('.view');
+    const tabs = document.querySelectorAll('.tabbar button');
+    function navigate(name) {
+      views.forEach(v => v.hidden = v.dataset.view !== name);
+      tabs.forEach(b => b.classList.toggle('active', b.dataset.nav === name));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    tabs.forEach(b => b.addEventListener('click', () => navigate(b.dataset.nav)));
+
+    // --- Sheets helpers ---
+    function openSheet(id){ document.getElementById(id).showModal(); }
+    function closeSheet(id){ document.getElementById(id).close(); }
+
+    // --- Save follow-up (mock) ---
+    function saveFollow(){
+      const note = document.getElementById('commNote').value.trim();
+      if (!note) return toast('请先填写沟通记录');
+      localStorage.setItem('lastFollow', JSON.stringify({
+        note, date: document.getElementById('commDate').value, time: document.getElementById('commTime').value
+      }));
+      toast('已保存沟通记录');
+      closeSheet('sheetFollow');
+    }
+
+    // --- Students data (mock) ---
+    const students = [
+      { name: '张晨', class: 'A1', daysLeft: 7, intention: 92, status: '沟通中', progress: ['核心力量+12%', '站姿稳定性+9%', '推杆精准度+8%'], faq:  ['是否有长期优惠？','能否周末上课？'], match: 84, risk: 12, factors: {checkin: 0.92, reply: '快', leave: '低'} },
+      { name: '林一', class: 'B2', daysLeft: 15, intention: 68, status: '已提醒', progress: ['上杆节奏+7%','短距离控制+5%','心理稳定性+4%'], faq: ['课表能否调晚？'], match: 72, risk: 28, factors: {checkin: 0.76, reply: '中', leave: '中'} },
+      { name: '王子墨', class: 'C1', daysLeft: 30, intention: 38, status: '待提醒', progress: ['基本动作+3%','体能+2%','专注度+2%'], faq: ['有团购吗？','是否支持分期？'], match: 55, risk: 64, factors: {checkin: 0.42, reply: '慢', leave: '高'} },
+      { name: '赵若南', class: 'A2', daysLeft: 3, intention: 88, status: '待缴费', progress: ['击球稳定+11%','球道选择+6%','策略意识+8%'], faq: ['家长课堂有吗？'], match: 78, risk: 18, factors: {checkin: 0.81, reply: '快', leave: '低'} },
+      { name: '周衡', class: 'D3', daysLeft: 20, intention: 52, status: '已提醒', progress: ['挥杆速度+6%','核心力量+4%','柔韧性+5%'], faq: ['能上高阶班吗？'], match: 67, risk: 41, factors: {checkin: 0.58, reply: '中', leave: '中'} },
+      { name: '陈可', class: 'A1', daysLeft: 18, intention: 27, status: '沟通中', progress: ['步伐协调+2%','基础节奏+1%','专注度+1%'], faq: ['是否能停课保留？'], match: 49, risk: 72, factors: {checkin: 0.31, reply: '慢', leave: '高'} }
+    ];
+
+    const listEl = document.getElementById('studentList');
+    const segBtns = document.querySelectorAll('.seg button[data-filter]');
+    const q = document.getElementById('q');
+
+    function renderStudents() {
+      const filter = [...segBtns].find(b => b.classList.contains('active'))?.dataset.filter || 'all';
+      const term = q.value.trim().toLowerCase();
+      listEl.innerHTML = '';
+
+      students
+        .filter(s => {
+          const typ = s.intention >= 90 ? 'high' : s.intention >= 50 ? 'mid' : 'low';
+          const byType = filter === 'all' || filter === typ;
+          const byTerm = !term || s.name.toLowerCase().includes(term) || s.class.toLowerCase().includes(term);
+          return byType && byTerm;
+        })
+        .sort((a,b) => a.daysLeft - b.daysLeft)
+        .forEach((s,i) => {
+          const typ = s.intention >= 90 ? 'high' : s.intention >= 50 ? 'mid' : 'low';
+          const statusColor = s.status.includes('超期') ? 'danger' : s.status.includes('完成') ? 'success' : 'primary';
+          const card = document.createElement('div');
+          card.className = 'student';
+          card.innerHTML = `
+            <div class="avatar">${s.name.slice(-2)}</div>
+            <div>
+              <div class="between">
+                <div>
+                  <h4>${s.name} · ${s.class}</h4>
+                  <div class="row sm muted"><span>剩余 <strong>${s.daysLeft}</strong> 天</span> · <span>${s.factors.reply}回复 · 打卡${Math.round(s.factors.checkin*100)}%</span></div>
+                </div>
+                <span class="pill" data-type="${typ}">${s.intention}%</span>
+              </div>
+              <div class="row mt8">
+                <span class="chip" data-kind="${statusColor}">${s.status}</span>
+                <span class="chip" data-kind="${s.risk>=60?'danger':s.risk>=30?'warning':'success'}">风险 ${s.risk}</span>
+                <span class="chip" data-kind="accent">匹配度 ${s.match}%</span>
+              </div>
+              <div class="actions">
+                <button class="btn mini" onclick="openScriptFor('${s.name}')">沟通剧本</button>
+                <button class="btn ghost mini" onclick="openSheet('sheetToolbox')">预约洽谈</button>
+                <button class="btn ghost mini" onclick="markTalked(${i})">标记已沟通</button>
+              </div>
+            </div>
+            <div>
+              <button class="btn ghost mini" onclick="/* placeholder */">…</button>
+            </div>
+            <details class="student-extra mt8">
+              <summary>展开 · 进步点 / FAQ / 推荐套餐</summary>
+              <div class="grid3 mt8">
+                <div class="plan"><strong>3 大进步点</strong><p class="xs">${s.progress.join(' · ')}</p></div>
+                <div class="plan"><strong>家长高频问题</strong><p class="xs">${s.faq.join(' · ')}</p></div>
+                <div class="plan"><strong>推荐套餐匹配度</strong><p class="xs">${s.match}% · 建议：${s.match>75?'A':'B'} 套餐</p></div>
+              </div>
+            </details>
+          `;
+          listEl.appendChild(card);
+        });
+    }
+    renderStudents();
+    segBtns.forEach(b => b.addEventListener('click', () => { segBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderStudents(); }));
+    q.addEventListener('input', renderStudents);
+
+    function markTalked(idx){
+      students[idx].status = '已沟通';
+      toast('已标记为已沟通');
+      renderStudents();
+    }
+
+    function openScriptFor(name){
+      openSheet('sheetToolbox');
+      document.getElementById('scriptOut').value = `【${name}】沟通要点：\\n1) 回顾近期 3 大进步点；\\n2) 强调家长期望；\\n3) 推荐匹配度最高的套餐并说明 7 天满意保障。`;
+    }
+
+    function copyText(id){
+      const el = document.getElementById(id);
+      el.select(); document.execCommand('copy'); toast('已复制');
+    }
+
+    function genScript(){
+      const type = document.getElementById('parentType').value;
+      const focus = document.getElementById('studentFocus').value;
+      let opener = '';
+      if (type==='price') opener = '关于费用，我们准备了团购与长期续费双重优惠；';
+      if (type==='busy') opener = '考虑到您时间紧，我们可优先安排晚间黄金时段或周末集中班；';
+      if (type==='quality') opener = '我们会展示孩子在核心技术模块的量化进步曲线；';
+      if (type==='hesitant') opener = '可先安排 1 节高阶课程旁听，降低决策门槛；';
+
+      const focusTxt = {
+        tech: '突出技术进步（如挥杆稳定、推杆精准）与后续目标。',
+        interest: '强调学习氛围与兴趣培养，保持长期内驱。',
+        discipline: '展示打卡率与自律成长对学习成绩的正向影响。'
+      }[focus];
+
+      document.getElementById('scriptOut').value = `开场：${opener}
+核心：${focusTxt}
+方案：优先推荐匹配度 75%+ 的套餐，并说明“7天满意保障；不满意可退剩余费用”。
+提醒：续费优惠倒计时进行中，抓住本周黄金时段（19:00–21:00）。`;
+    }
+
+    // --- Payment toggles ---
+    const payMethods = document.getElementById('payMethods');
+    payMethods.addEventListener('click', (e) => {
+      const m = e.target.closest('.method'); if (!m) return;
+      [...payMethods.children].forEach(x => x.classList.toggle('active', x===m));
+      if (m.dataset.method==='chain') toast('区块链支付为示意项，真实业务请评估合规与成本');
+    });
+    document.getElementById('fullPayBtn').addEventListener('click', (e)=>{
+      e.target.classList.add('active'); document.getElementById('instalBtn').classList.remove('active'); toast('已选择全款');
+    });
+    document.getElementById('instalBtn').addEventListener('click', (e)=>{
+      e.target.classList.add('active'); document.getElementById('fullPayBtn').classList.remove('active'); toast('已选择分期');
+    });
+
+    // --- Insights dynamic ---
+    function refreshInsights(){
+      const rand = (base) => Math.max(5, Math.min(95, Math.round(base + (Math.random()*10-5))));
+      const conv = rand(68), avgDays = Math.max(2.0, Math.min(8.0, (Math.random()*2-1) + 4.2)).toFixed(1);
+      document.getElementById('kpiConv').textContent = conv + '%';
+      document.getElementById('kpiAvg').textContent = avgDays + '天';
+      document.getElementById('ringConv').style.setProperty('--val', conv);
+      document.getElementById('ringAvg').style.setProperty('--val', Math.round(parseFloat(avgDays)*10));
+      ['s0','s1','s2','s3','s4','s5'].forEach((id,i)=>{
+        const v = rand([40,68,52,30,72,18][i]);
+        document.getElementById(id).style.width = v+'%';
+        document.getElementById(id+'p').textContent = v;
+      });
+      buildRiskList();
+      toast('已刷新看板');
+    }
+
+    function buildRiskList(){
+      const el = document.getElementById('riskList');
+      el.innerHTML = '';
+      students
+        .map(s => {
+          // risk modeled from behavior
+          let risk = Math.round(100 - (s.factors.checkin*50) - (s.intention*0.4) + (s.factors.reply==='慢'?20:s.factors.reply==='中'?10:0) + (s.factors.leave==='高'?20: s.factors.leave==='中'?10:0));
+          risk = Math.max(0, Math.min(100, risk));
+          return { ...s, risk };
+        })
+        .sort((a,b)=> b.risk - a.risk)
+        .slice(0,4)
+        .forEach(s => {
+          const row = document.createElement('div');
+          row.className = 'between';
+          row.style.padding = '8px 0';
+          const kind = s.risk>=60?'danger': s.risk>=30?'warning':'success';
+          row.innerHTML = `
+            <div class="row">
+              <span class="chip" data-kind="${kind}">风险 ${s.risk}</span>
+              <strong>${s.name}</strong>
+              <span class="muted xs">· ${s.class}</span>
+            </div>
+            <button class="btn ghost" onclick="toast('建议：${s.risk>=60?'优先电话回访+挽留方案': s.risk>=30?'展示成长成果+预约试听':'保持适度关怀，减少打扰'}')">查看建议</button>
+          `;
+          el.appendChild(row);
+        });
+    }
+    buildRiskList();
+
+    // --- ROI Calculator ---
+    const months = document.getElementById('months');
+    const mVal = document.getElementById('mVal');
+    const techUp = document.getElementById('techUp');
+    const eventLevel = document.getElementById('eventLevel');
+    const perHour = document.getElementById('perHour');
+
+    function calcROI(){
+      const m = parseInt(months.value,10);
+      mVal.textContent = m;
+      const tech = (m * 2).toFixed(0);           // 每月约 +2%（示意）
+      const per = (2 / 1.1).toFixed(1);          // 每课时提升值（示意）
+      techUp.textContent = `+${tech}%`;
+      perHour.textContent = `+${per}%`;
+      eventLevel.textContent = m>=12 ? '省级' : m>=6 ? '市级' : '校级';
+    }
+    months.addEventListener('input', calcROI);
+    calcROI();
+
+    // --- Tab default (home) ---
+    navigate('home');
+  </script>
+</body>
+</html>
